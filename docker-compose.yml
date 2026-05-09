@@ -1,0 +1,16 @@
+services:
+  utility-tracker:
+    # Option A: pull from GHCR (recommended for running without source code)
+    image: ghcr.io/soundbyte1024/utility-choice-tracker:latest
+    # Option B: build locally from source (comment out image: above and uncomment below)
+    # build: .
+    container_name: utility-choice-tracker
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - /opt/utility-tracker/data:/data
+      - /opt/utility-tracker/uploads:/uploads
+    environment:
+      - TZ=America/New_York
+

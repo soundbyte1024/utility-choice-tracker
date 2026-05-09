@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Utility Choice Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #0f0f14;
+    --surface:   #17171f;
+    --card:      #1e1e28;
+    --border:    #2a2a38;
+    --text:      #e8e8f0;
+    --muted:     #7a7a96;
+    --accent:    #5b8dee;
+    --electric:  #f5c518;
+    --gas:       #ff7043;
+    --success:   #4caf82;
+    --warning:   #f0a500;
+    --critical:  #e63946;
+    --radius:    12px;
+    --font-display: 'DM Serif Display', serif;
+    --font-body:    'DM Sans', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-body); font-size: 15px; min-height: 100vh; }
+  .shell { display: flex; min-height: 100vh; }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: 230px; background: var(--surface); border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; padding: 28px 0;
+    position: fixed; top: 0; left: 0; bottom: 0; z-index: 100;
+  }
+  .logo { padding: 0 20px 20px; border-bottom: 1px solid var(--border); margin-bottom: 12px; }
+  .logo-title { font-family: var(--font-display); font-size: 19px; line-height: 1.2; color: var(--text); }
+  .logo-sub { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; margin-top: 4px; }
+
+  /* Address selector */
+  .address-selector { padding: 10px 20px 16px; border-bottom: 1px solid var(--border); margin-bottom: 12px; }
+  .address-selector-label { font-size: 10px; text-transform: uppercase; letter-spacing: .09em; color: var(--muted); margin-bottom: 6px; }
+  .address-select-wrap { position: relative; }
+  .address-select {
+    width: 100%; background: var(--card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 28px 8px 10px; color: var(--text);
+    font-family: var(--font-body); font-size: 13px; font-weight: 500;
+    cursor: pointer; appearance: none; -webkit-appearance: none;
+    transition: border .15s;
+  }
+  .address-select:focus { outline: none; border-color: var(--accent); }
+  .address-select-arrow {
+    position: absolute; right: 9px; top: 50%; transform: translateY(-50%);
+    pointer-events: none; color: var(--muted); font-size: 10px;
+  }
+
+  .nav-item {
+    display: flex; align-items: center; gap: 10px; padding: 10px 20px; cursor: pointer;
+    color: var(--muted); font-size: 14px; font-weight: 500; transition: all .15s; border-left: 3px solid transparent;
+  }
+  .nav-item:hover { color: var(--text); background: rgba(255,255,255,.03); }
+  .nav-item.active { color: var(--accent); border-left-color: var(--accent); background: rgba(91,141,238,.06); }
+  .nav-icon { width: 18px; height: 18px; flex-shrink: 0; }
+
+  .main { margin-left: 230px; flex: 1; padding: 40px; max-width: 1100px; }
+
+  /* ── Page header ── */
+  .page-header { margin-bottom: 32px; }
+  .page-title { font-family: var(--font-display); font-size: 32px; color: var(--text); }
+  .page-subtitle { color: var(--muted); margin-top: 6px; font-size: 14px; }
+  .flex-between { display: flex; align-items: center; justify-content: space-between; }
+
+  /* ── Utility panels ── */
+  .utility-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 28px; }
+  .utility-panel { background: var(--card); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+  .utility-panel-header { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px 16px; border-bottom: 1px solid var(--border); }
+  .utility-panel-label { display: flex; align-items: center; gap: 10px; }
+  .utility-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+  .utility-icon.electric { background: rgba(245,197,24,.12); }
+  .utility-icon.gas      { background: rgba(255,112,67,.12); }
+  .utility-type-name { font-family: var(--font-display); font-size: 20px; color: var(--text); }
+  .utility-type-sub { font-size: 12px; color: var(--muted); margin-top: 1px; }
+  .contract-section { padding: 20px 24px; }
+  .contract-section + .contract-section { border-top: 1px solid var(--border); background: rgba(255,255,255,.015); }
+  .contract-section-label { font-size: 10px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); margin-bottom: 14px; display: flex; align-items: center; gap: 6px; }
+  .contract-section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .contract-name { font-family: var(--font-display); font-size: 22px; color: var(--text); margin-bottom: 12px; line-height: 1.2; }
+  .contract-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  .meta-label { font-size: 11px; color: var(--muted); margin-bottom: 3px; }
+  .meta-value { font-size: 15px; font-weight: 500; color: var(--text); }
+  .meta-value.rate { font-family: var(--font-display); font-size: 20px; }
+  .term-progress { margin-top: 14px; }
+  .term-progress-labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+  .progress-track { background: var(--border); border-radius: 4px; height: 6px; }
+  .progress-fill { height: 6px; border-radius: 4px; transition: width .6s ease; }
+  .progress-active   { background: var(--success); }
+  .progress-warning  { background: var(--warning); }
+  .progress-critical { background: var(--critical); }
+  .days-badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-top: 12px; }
+  .days-badge.active   { background: rgba(76,175,130,.15); color: var(--success); }
+  .days-badge.warning  { background: rgba(240,165,0,.15); color: var(--warning); }
+  .days-badge.critical { background: rgba(230,57,70,.15); color: var(--critical); }
+  .days-badge.expired  { background: rgba(122,122,150,.12); color: var(--muted); }
+  .no-contract { padding: 32px 24px; text-align: center; color: var(--muted); }
+  .no-contract-icon { font-size: 32px; margin-bottom: 10px; }
+  .no-contract-text { font-size: 14px; margin-bottom: 14px; }
+
+  /* ── Alerts ── */
+  .alert { padding: 14px 18px; border-radius: 10px; font-size: 14px; margin-bottom: 16px; display: flex; align-items: flex-start; gap: 10px; }
+  .alert-warning  { background: rgba(240,165,0,.1); border: 1px solid rgba(240,165,0,.2); color: var(--warning); }
+  .alert-critical { background: rgba(230,57,70,.1); border: 1px solid rgba(230,57,70,.2); color: var(--critical); }
+  .alert-info     { background: rgba(91,141,238,.1); border: 1px solid rgba(91,141,238,.2); color: var(--accent); }
+
+  /* ── Cards ── */
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; }
+  .card + .card { margin-top: 24px; }
+
+  /* ── Table ── */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; padding: 10px 14px; font-size: 11px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); border-bottom: 1px solid var(--border); white-space: nowrap; }
+  td { padding: 14px; border-bottom: 1px solid rgba(255,255,255,.04); font-size: 14px; vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,.02); }
+
+  /* ── Badges ── */
+  .badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+  .badge-active   { background: rgba(76,175,130,.15); color: var(--success); }
+  .badge-warning  { background: rgba(240,165,0,.15);  color: var(--warning); }
+  .badge-critical { background: rgba(230,57,70,.15);  color: var(--critical); }
+  .badge-expired  { background: rgba(122,122,150,.12); color: var(--muted); }
+  .badge-electric { background: rgba(245,197,24,.1); color: var(--electric); }
+  .badge-gas      { background: rgba(255,112,67,.1);  color: var(--gas); }
+
+  /* ── Buttons ── */
+  .btn { display: inline-flex; align-items: center; gap: 7px; padding: 9px 18px; border-radius: 8px; font-family: var(--font-body); font-size: 14px; font-weight: 500; cursor: pointer; border: none; transition: all .15s; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #4a7de0; }
+  .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+  .btn-ghost:hover { color: var(--text); border-color: var(--muted); }
+  .btn-danger { background: rgba(230,57,70,.15); color: var(--critical); border: 1px solid rgba(230,57,70,.2); }
+  .btn-danger:hover { background: rgba(230,57,70,.25); }
+  .btn-sm { padding: 6px 12px; font-size: 13px; }
+  .btn-icon { padding: 7px; }
+
+  /* ── Forms ── */
+  .form-group { margin-bottom: 20px; }
+  .form-label { display: block; font-size: 13px; font-weight: 500; color: var(--muted); margin-bottom: 6px; }
+  .form-input, .form-select, .form-textarea {
+    width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 14px; color: var(--text); font-family: var(--font-body); font-size: 14px; transition: border .15s;
+  }
+  .form-input:focus, .form-select:focus, .form-textarea:focus { outline: none; border-color: var(--accent); }
+  .form-select { cursor: pointer; }
+  .form-textarea { min-height: 80px; resize: vertical; }
+  .form-row   { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+  /* ── Modal ── */
+  .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.7); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; pointer-events: none; transition: opacity .2s; }
+  .modal-backdrop.open { opacity: 1; pointer-events: all; }
+  .modal { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 32px; width: 600px; max-width: 95vw; max-height: 90vh; overflow-y: auto; transform: translateY(20px); transition: transform .2s; }
+  .modal-backdrop.open .modal { transform: translateY(0); }
+  .modal-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 24px; }
+  .modal-title { font-family: var(--font-display); font-size: 24px; margin-bottom: 0; }
+  .modal-close-btn { background: transparent; border: none; color: var(--muted); cursor: pointer; padding: 4px; border-radius: 6px; line-height: 1; font-size: 20px; transition: color .15s, background .15s; flex-shrink: 0; margin-top: -2px; }
+  .modal-close-btn:hover { color: var(--text); background: rgba(255,255,255,.06); }
+  .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 28px; }
+
+  /* ── Drop zone ── */
+  .drop-zone { border: 2px dashed var(--border); border-radius: 10px; padding: 28px; text-align: center; cursor: pointer; transition: all .2s; color: var(--muted); }
+  .drop-zone:hover, .drop-zone.drag-over { border-color: var(--accent); color: var(--accent); background: rgba(91,141,238,.04); }
+  .drop-zone-icon { font-size: 28px; margin-bottom: 8px; }
+  .drop-zone-text { font-size: 13px; }
+  .file-list { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+  .file-item { display: flex; align-items: center; justify-content: space-between; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; font-size: 13px; }
+  .file-item-name { display: flex; align-items: center; gap: 8px; color: var(--text); }
+
+  /* ── Address cards in settings ── */
+  .address-card {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
+    padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .address-card-info { flex: 1; }
+  .address-card-name { font-weight: 600; font-size: 15px; color: var(--text); }
+  .address-card-detail { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .address-card-actions { display: flex; gap: 6px; }
+
+  /* ── Toast ── */
+  #toast { position: fixed; bottom: 28px; right: 28px; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 20px; font-size: 14px; z-index: 9999; transform: translateY(80px); opacity: 0; transition: all .3s; max-width: 340px; }
+  #toast.show { transform: translateY(0); opacity: 1; }
+  #toast.toast-success { border-color: var(--success); color: var(--success); }
+  #toast.toast-error   { border-color: var(--critical); color: var(--critical); }
+
+  /* ── Misc ── */
+  .section-title { font-family: var(--font-display); font-size: 20px; margin-bottom: 16px; }
+  .divider { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+  .hidden { display: none !important; }
+  .account-chip { display: inline-block; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 3px 9px; font-size: 12px; color: var(--muted); font-family: monospace; letter-spacing: .04em; }
+  .compare-btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 7px; font-size: 13px; font-weight: 500; text-decoration: none; transition: all .15s; background: rgba(91,141,238,.1); color: var(--accent); border: 1px solid rgba(91,141,238,.2); }
+  .compare-btn:hover { background: rgba(91,141,238,.2); }
+
+  /* ── Term slider ── */
+  .term-slider-wrap { display: flex; flex-direction: column; gap: 10px; }
+  .term-slider-row { display: flex; align-items: center; gap: 12px; }
+  .term-slider { flex: 1; -webkit-appearance: none; appearance: none; height: 5px; border-radius: 3px; background: var(--border); outline: none; cursor: pointer; }
+  .term-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 18px; height: 18px; border-radius: 50%; background: var(--accent); cursor: pointer; border: 2px solid var(--bg); box-shadow: 0 0 0 1px var(--accent); }
+  .term-slider::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: var(--accent); cursor: pointer; border: 2px solid var(--bg); }
+  .term-months-input { width: 64px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; color: var(--text); font-family: var(--font-body); font-size: 14px; text-align: center; }
+  .term-months-input:focus { outline: none; border-color: var(--accent); }
+  .term-dates-display { display: flex; gap: 8px; align-items: center; font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .term-date-chip { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 5px 10px; font-size: 13px; color: var(--text); }
+
+  /* ── Tag input ── */
+  .tags-input { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .tag { background: rgba(91,141,238,.15); color: var(--accent); border-radius: 6px; padding: 4px 10px; font-size: 13px; display: flex; align-items: center; gap: 6px; }
+  .tag-remove { cursor: pointer; opacity: .6; }
+  .tag-remove:hover { opacity: 1; }
+  .tag-input-field { background: transparent; border: none; color: var(--text); font-size: 14px; font-family: var(--font-body); outline: none; width: 80px; }
+
+  /* ── No addresses state ── */
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--muted); }
+  .empty-state-icon { font-size: 48px; margin-bottom: 16px; }
+  .empty-state-title { font-family: var(--font-display); font-size: 22px; color: var(--text); margin-bottom: 8px; }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <div class="logo">
+      <div class="logo-title">Utility Choice<br>Tracker</div>
+      <div class="logo-sub">Energy Contract Manager</div>
+    </div>
+
+    <!-- Address selector -->
+    <div class="address-selector">
+      <div class="address-selector-label">Address</div>
+      <div class="address-select-wrap">
+        <select class="address-select" id="address-select" onchange="onAddressChange()">
+          <option value="">Loading…</option>
+        </select>
+        <span class="address-select-arrow">▼</span>
+      </div>
+    </div>
+
+    <div class="nav-item active" onclick="showPage('dashboard')" id="nav-dashboard">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      Dashboard
+    </div>
+    <div class="nav-item" onclick="showPage('suppliers')" id="nav-suppliers">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+      Suppliers
+    </div>
+    <div class="nav-item" onclick="showPage('settings')" id="nav-settings">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Settings
+    </div>
+
+    <div style="margin-top:auto;padding:20px;border-top:1px solid var(--border);">
+      <a href="#" id="sidebar-compare-link" target="_blank"
+         style="display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px;text-decoration:none;transition:color .15s;"
+         onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        Compare Suppliers
+      </a>
+      <div style="margin-top:12px;font-size:11px;color:var(--muted);">v1.1.0</div>
+    </div>
+  </nav>
+
+  <main class="main">
+
+    <!-- DASHBOARD -->
+    <div id="page-dashboard">
+      <div class="page-header flex-between">
+        <div>
+          <h1 class="page-title">Dashboard</h1>
+          <p class="page-subtitle" id="dash-subtitle">Your active energy supplier contracts at a glance</p>
+        </div>
+        <button class="btn btn-primary" onclick="openAddModal()">+ Add Supplier</button>
+      </div>
+      <div id="dash-alerts"></div>
+      <div class="utility-grid" id="utility-grid"></div>
+    </div>
+
+    <!-- SUPPLIERS -->
+    <div id="page-suppliers" class="hidden">
+      <div class="page-header flex-between">
+        <div>
+          <h1 class="page-title">Suppliers</h1>
+          <p class="page-subtitle" id="suppliers-subtitle">All electric and gas supplier contracts</p>
+        </div>
+        <button class="btn btn-primary" onclick="openAddModal()">+ Add Supplier</button>
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Utility</th><th>Supplier</th><th>Rate</th><th>Contract Period</th><th>Days Remaining</th><th>Status</th><th></th></tr></thead>
+            <tbody id="suppliers-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div id="page-settings" class="hidden">
+      <div class="page-header">
+        <h1 class="page-title">Settings</h1>
+        <p class="page-subtitle">Manage addresses, email alerts, and configuration</p>
+      </div>
+
+      <!-- Addresses section -->
+      <div class="card">
+        <div class="flex-between" style="margin-bottom:20px;">
+          <h2 class="section-title" style="margin:0;">Addresses</h2>
+          <button class="btn btn-primary btn-sm" onclick="openAddressModal()">+ Add Address</button>
+        </div>
+        <div id="address-list"></div>
+      </div>
+
+      <!-- SMTP -->
+      <div class="card">
+        <h2 class="section-title">SMTP Email Configuration</h2>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">SMTP Host</label><input class="form-input" id="s-smtp-host" placeholder="smtp.gmail.com"></div>
+          <div class="form-group"><label class="form-label">SMTP Port</label><input class="form-input" id="s-smtp-port" type="number" placeholder="587"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">SMTP Username</label><input class="form-input" id="s-smtp-user" placeholder="you@example.com"></div>
+          <div class="form-group"><label class="form-label">SMTP Password</label><input class="form-input" id="s-smtp-pass" type="password" placeholder="leave blank to keep current"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">From Address</label><input class="form-input" id="s-smtp-from" placeholder="Utility Tracker <you@example.com>"></div>
+          <div class="form-group"><label class="form-label">Alert Recipient Email</label><input class="form-input" id="s-alert-email" placeholder="alerts@youremail.com"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <input type="checkbox" id="s-smtp-tls" style="width:16px;height:16px;"> Use STARTTLS (recommended)
+          </label>
+        </div>
+        <hr class="divider">
+        <h2 class="section-title">Comparison Website</h2>
+        <p style="color:var(--muted);font-size:14px;margin-bottom:16px;">Your state's energy supplier comparison URL. Shown in the sidebar and in alert emails.</p>
+        <div class="form-group"><label class="form-label">Comparison Website URL</label><input class="form-input" id="s-compare-url" placeholder="https://www.energychoice.ohio.gov/ApplestoApples.aspx"></div>
+        <hr class="divider">
+        <h2 class="section-title">Alert Schedule</h2>
+        <p style="color:var(--muted);font-size:14px;margin-bottom:16px;">Send an alert this many days before a contract expires. Type a number and press Enter to add.</p>
+        <div class="form-group">
+          <label class="form-label">Alert Days</label>
+          <div class="form-input tags-input" id="alert-days-container" onclick="document.getElementById('alert-days-input').focus()">
+            <input class="tag-input-field" id="alert-days-input" placeholder="e.g. 30" type="number" min="1" max="365">
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;margin-top:8px;">
+          <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+          <button class="btn btn-ghost" onclick="testEmail()">Send Test Email</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 class="section-title">Manual Alert Check</h2>
+        <p style="color:var(--muted);font-size:14px;margin-bottom:16px;">Alerts run automatically at 8 AM daily. You can also trigger a check right now.</p>
+        <button class="btn btn-ghost" onclick="runAlertCheck()">▶ Run Alert Check Now</button>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- SUPPLIER MODAL -->
+<div class="modal-backdrop" id="supplier-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title" id="modal-title">Add Supplier</h2>
+      <button class="modal-close-btn" onclick="closeModal('supplier-modal')" title="Close">&#x2715;</button>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Utility Type</label>
+        <select class="form-select" id="f-type" onchange="onTypeChange()">
+          <option value="electric">⚡ Electric</option>
+          <option value="gas">🔥 Natural Gas</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Supplier Name</label><input class="form-input" id="f-name" placeholder="e.g. Constellation Energy"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label" id="f-rate-label">Rate (¢ / kWh)</label>
+        <input class="form-input" id="f-rate" type="number" step="0.01" min="0" placeholder="8.79">
+      </div>
+      <div class="form-group"><label class="form-label">Rate Unit</label>
+        <select class="form-select" id="f-rate-unit"></select>
+      </div>
+      <div class="form-group"><label class="form-label">Account Number</label><input class="form-input" id="f-account" placeholder="Optional"></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Contract Start Date</label>
+      <input class="form-input" id="f-start" type="date" onchange="recalcEnd()">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Term Length</label>
+      <div class="term-slider-wrap">
+        <div class="term-slider-row">
+          <input type="range" class="term-slider" id="f-term-slider" min="1" max="60" value="12" oninput="onSliderInput(this.value)">
+          <input type="number" class="term-months-input" id="f-term-months" value="12" min="1" max="60" oninput="onMonthsInput(this.value)">
+          <span style="font-size:13px;color:var(--muted);white-space:nowrap;">months</span>
+        </div>
+        <div class="term-dates-display">
+          <span style="color:var(--muted);">Ends:</span>
+          <span class="term-date-chip" id="f-end-display">—</span>
+          <input type="hidden" id="f-end">
+        </div>
+      </div>
+    </div>
+    <div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" id="f-notes" placeholder="Cancellation terms, enrollment details, etc."></textarea></div>
+    <div class="form-group">
+      <label class="form-label">Documents</label>
+      <div class="drop-zone" id="drop-zone" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" onclick="document.getElementById('file-input').click()">
+        <div class="drop-zone-icon">📎</div>
+        <div class="drop-zone-text">Drop files here or click to upload<br><span style="font-size:12px;opacity:.6">Contracts, bills, enrollment letters…</span></div>
+      </div>
+      <input type="file" id="file-input" multiple class="hidden" onchange="handleFileSelect(event)">
+      <div class="file-list" id="new-file-list"></div>
+      <div id="existing-docs" class="file-list" style="margin-top:8px;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('supplier-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveSupplier()" id="save-btn">Save Supplier</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADDRESS MODAL -->
+<div class="modal-backdrop" id="address-modal">
+  <div class="modal" style="width:480px;">
+    <div class="modal-header">
+      <h2 class="modal-title" id="address-modal-title">Add Address</h2>
+      <button class="modal-close-btn" onclick="closeModal('address-modal')" title="Close">&#x2715;</button>
+    </div>
+    <div class="form-group"><label class="form-label">Name / Label</label><input class="form-input" id="a-name" placeholder="e.g. Home, Rental Property, Parents' House"></div>
+    <div class="form-group"><label class="form-label">Street Address</label><input class="form-input" id="a-street" placeholder="123 Main St"></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">City</label><input class="form-input" id="a-city" placeholder="Columbus"></div>
+      <div class="form-group"><label class="form-label">State</label><input class="form-input" id="a-state" placeholder="OH"></div>
+    </div>
+    <div class="form-group"><label class="form-label">ZIP Code</label><input class="form-input" id="a-zip" placeholder="43215" style="max-width:160px;"></div>
+    <div class="form-group">
+      <label class="form-label">CC Email <span style="color:var(--muted);font-weight:400;">(optional — copied on all alerts for this address)</span></label>
+      <input class="form-input" id="a-cc-email" type="email" placeholder="tenant@example.com, landlord@example.com">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('address-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveAddress()" id="address-save-btn">Save Address</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+let currentPage = 'dashboard';
+let currentAddressId = null;
+let addresses = [];
+let editingId = null;
+let editingAddressId = null;
+let newFiles = [];
+let alertDays = [];
+
+const RATE_OPTIONS = {
+  electric: [{ value:'kWh', label:'¢ / kWh', rateLabel:'Rate (¢ / kWh)', step:'0.01', placeholder:'8.79' }],
+  gas: [
+    { value:'Ccf',   label:'$ / Ccf',   rateLabel:'Rate ($ / Ccf)',   step:'0.001', placeholder:'0.589' },
+    { value:'Mcf',   label:'$ / Mcf',   rateLabel:'Rate ($ / Mcf)',   step:'0.01',  placeholder:'5.89'  },
+    { value:'therm', label:'$ / therm', rateLabel:'Rate ($ / therm)', step:'0.001', placeholder:'0.589' },
+  ],
+};
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+async function init() {
+  const settings = await api('/api/settings');
+  const compareUrl = settings.compare_url || 'https://www.energychoice.ohio.gov/ApplestoApples.aspx';
+  document.getElementById('sidebar-compare-link').href = compareUrl;
+
+  addresses = await api('/api/addresses');
+  renderAddressDropdown();
+
+  if (addresses.length === 0) {
+    showNoAddressState();
+    return;
+  }
+
+  // Restore last selected address from localStorage, fallback to first
+  const saved = localStorage.getItem('selectedAddressId');
+  const found = addresses.find(a => a.id === saved);
+  currentAddressId = found ? found.id : addresses[0].id;
+  document.getElementById('address-select').value = currentAddressId;
+
+  showPage('dashboard');
+}
+
+function showNoAddressState() {
+  ['dashboard','suppliers'].forEach(p => document.getElementById('page-'+p).classList.add('hidden'));
+  document.getElementById('page-settings').classList.remove('hidden');
+  ['nav-dashboard','nav-suppliers'].forEach(id => document.getElementById(id).style.opacity = '0.4');
+  document.getElementById('nav-settings').classList.add('active');
+  loadSettings();
+  showToast('Welcome! Add your first address to get started.', 'info');
+}
+
+// ── Address dropdown ──────────────────────────────────────────────────────────
+function renderAddressDropdown() {
+  const sel = document.getElementById('address-select');
+  sel.innerHTML = addresses.length
+    ? addresses.map(a => `<option value="${a.id}">${a.name}${a.city ? ' — '+a.city : ''}</option>`).join('')
+    : '<option value="">No addresses</option>';
+}
+
+function onAddressChange() {
+  const val = document.getElementById('address-select').value;
+  if (!val) return;
+  currentAddressId = val;
+  localStorage.setItem('selectedAddressId', val);
+  showPage('dashboard');
+}
+
+// ── Navigation ────────────────────────────────────────────────────────────────
+function showPage(p) {
+  ['dashboard','suppliers','settings'].forEach(n => {
+    document.getElementById('page-'+n).classList.toggle('hidden', n!==p);
+    document.getElementById('nav-'+n).classList.toggle('active', n===p);
+  });
+  currentPage = p;
+  if (p==='dashboard') loadDashboard();
+  if (p==='suppliers') loadSuppliers();
+  if (p==='settings')  loadSettings();
+}
+
+function showToast(msg, type='success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'show toast-'+type;
+  setTimeout(() => t.className = '', 3200);
+}
+
+// ── Dashboard ─────────────────────────────────────────────────────────────────
+async function loadDashboard() {
+  if (!currentAddressId) return;
+  const addr = addresses.find(a => a.id === currentAddressId);
+  if (addr) {
+    const parts = [addr.street, addr.city, addr.state].filter(Boolean).join(', ');
+    document.getElementById('dash-subtitle').textContent = parts || addr.name;
+  }
+
+  const [data, settings] = await Promise.all([
+    api(`/api/addresses/${currentAddressId}/dashboard`),
+    api('/api/settings')
+  ]);
+  const compareUrl = settings.compare_url || 'https://www.energychoice.ohio.gov/ApplestoApples.aspx';
+  document.getElementById('sidebar-compare-link').href = compareUrl;
+
+  const alertsEl = document.getElementById('dash-alerts');
+  alertsEl.innerHTML = '';
+  for (const type of ['electric','gas']) {
+    const c = data[type].current;
+    if (!c) continue;
+    const typeLabel = type==='electric' ? '⚡ Electric' : '🔥 Gas';
+    if (c.status==='expired') {
+      alertsEl.innerHTML += `<div class="alert alert-critical">🔴 Your <strong>${typeLabel}</strong> contract with <strong>${c.supplier_name}</strong> expired ${Math.abs(c.days_remaining)} days ago. <a href="${compareUrl}" target="_blank" style="margin-left:10px;color:inherit;font-weight:600;text-decoration:underline;">Find a new supplier →</a></div>`;
+    } else if (c.status==='critical') {
+      alertsEl.innerHTML += `<div class="alert alert-critical">⚠️ Your <strong>${typeLabel}</strong> contract with <strong>${c.supplier_name}</strong> expires in <strong>${c.days_remaining} days</strong> on ${c.term_end}. <a href="${compareUrl}" target="_blank" style="margin-left:10px;color:inherit;font-weight:600;text-decoration:underline;">Find a new supplier →</a></div>`;
+    } else if (c.status==='warning') {
+      alertsEl.innerHTML += `<div class="alert alert-warning">🕐 Your <strong>${typeLabel}</strong> contract with <strong>${c.supplier_name}</strong> expires in <strong>${c.days_remaining} days</strong> on ${c.term_end}. <a href="${compareUrl}" target="_blank" style="margin-left:10px;color:inherit;font-weight:600;text-decoration:underline;">Start comparing →</a></div>`;
+    }
+  }
+
+  document.getElementById('utility-grid').innerHTML =
+    buildPanel('electric', data.electric, compareUrl) +
+    buildPanel('gas', data.gas, compareUrl);
+}
+
+function buildPanel(type, panel, compareUrl) {
+  const isE = type==='electric', icon = isE?'⚡':'🔥', label = isE?'Electric':'Natural Gas';
+  const statusLabel = panel.current
+    ? {active:'Active',warning:'Expiring Soon',critical:'Action Required',expired:'Expired'}[panel.current.status]
+    : 'No Contract';
+
+  let currentSection = '';
+  if (panel.current) {
+    const c = panel.current;
+    const pClass = c.status==='active'?'progress-active':c.status==='warning'?'progress-warning':'progress-critical';
+    const dLabel = c.days_remaining<0?`Expired ${Math.abs(c.days_remaining)}d ago`:`${c.days_remaining} days left`;
+    const rateDisplay = c.utility_type==='electric' ? `${c.rate}¢` : `$${c.rate}`;
+    currentSection = `<div class="contract-section">
+      <div class="contract-section-label">Current Contract</div>
+      <div class="contract-name">${c.supplier_name}</div>
+      <div class="contract-meta">
+        <div><div class="meta-label">Rate</div><div class="meta-value rate">${rateDisplay} <span style="font-size:13px;color:var(--muted)">/ ${c.rate_unit}</span></div></div>
+        <div><div class="meta-label">Account</div><div class="meta-value">${c.account_number?`<span class="account-chip">${c.account_number}</span>`:'<span style="color:var(--muted)">—</span>'}</div></div>
+        <div><div class="meta-label">Start Date</div><div class="meta-value" style="font-size:14px;">${c.term_start}</div></div>
+        <div><div class="meta-label">End Date</div><div class="meta-value" style="font-size:14px;">${c.term_end}</div></div>
+      </div>
+      <div class="term-progress">
+        <div class="term-progress-labels"><span>Term progress</span><span>${c.progress}%</span></div>
+        <div class="progress-track"><div class="progress-fill ${pClass}" style="width:${c.progress}%"></div></div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px;">
+        <span class="days-badge ${c.status}">${dLabel}</span>
+        <button class="btn btn-ghost btn-sm" onclick="openEditModal('${c.id}')">✏️ Edit</button>
+      </div>
+      ${c.notes?`<div style="margin-top:12px;font-size:13px;color:var(--muted);background:var(--bg);border-radius:8px;padding:10px 12px;">${c.notes}</div>`:''}
+    </div>`;
+  } else {
+    currentSection = `<div class="no-contract">
+      <div class="no-contract-icon">${icon}</div>
+      <div class="no-contract-text">No active ${label.toLowerCase()} contract</div>
+      <button class="btn btn-primary btn-sm" onclick="openAddModalForType('${type}')">+ Add Contract</button>
+    </div>`;
+  }
+
+  let upcomingSection = '';
+  if (panel.upcoming) {
+    const u = panel.upcoming;
+    const uRate = u.utility_type==='electric'?`${u.rate}¢`:`$${u.rate}`;
+    upcomingSection = `<div class="contract-section">
+      <div class="contract-section-label">Upcoming Contract</div>
+      <div class="contract-name" style="font-size:18px;">${u.supplier_name}</div>
+      <div class="contract-meta">
+        <div><div class="meta-label">Rate</div><div class="meta-value">${uRate} / ${u.rate_unit}</div></div>
+        <div><div class="meta-label">Starts</div><div class="meta-value" style="font-size:14px;">${u.term_start}</div></div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;margin-top:6px;">
+        <button class="btn btn-ghost btn-sm" onclick="openEditModal('${u.id}')">✏️ Edit</button>
+      </div>
+    </div>`;
+  } else if (panel.current && (panel.current.status==='warning'||panel.current.status==='critical')) {
+    upcomingSection = `<div class="contract-section" style="text-align:center;padding:16px 24px;">
+      <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">No upcoming contract lined up yet.</p>
+      <a href="${compareUrl}" target="_blank" class="compare-btn">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        Compare Suppliers Now
+      </a>
+    </div>`;
+  }
+
+  const expNote = panel.expired_count>0
+    ? `<div style="padding:10px 24px;font-size:12px;color:var(--muted);border-top:1px solid var(--border);">${panel.expired_count} expired contract${panel.expired_count>1?'s':''} — <span style="cursor:pointer;text-decoration:underline;" onclick="showPage('suppliers')">view in Suppliers</span></div>`
+    : '';
+
+  return `<div class="utility-panel">
+    <div class="utility-panel-header">
+      <div class="utility-panel-label">
+        <div class="utility-icon ${type}">${icon}</div>
+        <div><div class="utility-type-name">${label}</div><div class="utility-type-sub">${statusLabel}</div></div>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="openAddModalForType('${type}')">+ Add</button>
+    </div>
+    ${currentSection}${upcomingSection}${expNote}
+  </div>`;
+}
+
+// ── Suppliers table ───────────────────────────────────────────────────────────
+async function loadSuppliers() {
+  if (!currentAddressId) return;
+  const addr = addresses.find(a => a.id === currentAddressId);
+  if (addr) {
+    const parts = [addr.street, addr.city, addr.state].filter(Boolean).join(', ');
+    document.getElementById('suppliers-subtitle').textContent = parts || addr.name;
+  }
+  const data = await api(`/api/addresses/${currentAddressId}/suppliers`);
+  const tbody = document.getElementById('suppliers-tbody');
+  if (!data.length) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--muted);">No suppliers yet. Add your first contract.</td></tr>`;
+    return;
+  }
+  const colors = { active:'var(--success)',warning:'var(--warning)',critical:'var(--critical)',expired:'var(--muted)' };
+  const bgs    = { active:'rgba(76,175,130,.15)',warning:'rgba(240,165,0,.15)',critical:'rgba(230,57,70,.15)',expired:'rgba(122,122,150,.12)' };
+  tbody.innerHTML = data.map(s => {
+    const rateDisplay = s.utility_type==='electric'?`${s.rate}¢ / ${s.rate_unit}`:`$${s.rate} / ${s.rate_unit}`;
+    return `<tr>
+      <td><span class="badge badge-${s.utility_type}">${s.utility_type==='electric'?'⚡ Electric':'🔥 Gas'}</span></td>
+      <td><strong>${s.supplier_name}</strong>${s.account_number?`<br><span class="account-chip">${s.account_number}</span>`:''}</td>
+      <td>${rateDisplay}</td>
+      <td style="font-size:13px;">${s.term_start}<br><span style="color:var(--muted)">→ ${s.term_end}</span></td>
+      <td><span style="display:inline-block;padding:2px 8px;border-radius:6px;font-size:12px;font-weight:600;background:${bgs[s.status]};color:${colors[s.status]}">${s.days_remaining<0?Math.abs(s.days_remaining)+'d ago':s.days_remaining+'d'}</span></td>
+      <td><span class="badge badge-${s.status}">${{active:'● Active',warning:'● Expiring',critical:'⚠ Critical',expired:'✕ Expired'}[s.status]}</span></td>
+      <td><div style="display:flex;gap:6px;">
+        <button class="btn btn-ghost btn-sm btn-icon" onclick="openEditModal('${s.id}')">✏️</button>
+        <button class="btn btn-danger btn-sm btn-icon" onclick="deleteSupplier('${s.id}','${s.supplier_name.replace(/'/g,"\\'")}')">🗑️</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Supplier modal ────────────────────────────────────────────────────────────
+function onTypeChange() {
+  const type = document.getElementById('f-type').value;
+  const sel  = document.getElementById('f-rate-unit');
+  const opts = RATE_OPTIONS[type];
+  sel.innerHTML = opts.map(o => `<option value="${o.value}">${o.label}</option>`).join('');
+  updateRateFieldForUnit(opts[0]);
+}
+function onRateUnitChange() {
+  const type = document.getElementById('f-type').value;
+  const unit = document.getElementById('f-rate-unit').value;
+  const opt  = RATE_OPTIONS[type].find(o => o.value===unit) || RATE_OPTIONS[type][0];
+  updateRateFieldForUnit(opt);
+}
+function updateRateFieldForUnit(opt) {
+  document.getElementById('f-rate-label').textContent = opt.rateLabel;
+  const input = document.getElementById('f-rate');
+  input.step = opt.step; input.placeholder = opt.placeholder;
+}
+function onSliderInput(val) { document.getElementById('f-term-months').value=val; recalcEnd(); }
+function onMonthsInput(val) {
+  let v=Math.max(1,Math.min(60,parseInt(val)||1));
+  document.getElementById('f-term-slider').value=v;
+  document.getElementById('f-term-months').value=v;
+  recalcEnd();
+}
+function recalcEnd() {
+  const startVal=document.getElementById('f-start').value;
+  const months=parseInt(document.getElementById('f-term-months').value)||12;
+  if (!startVal) { document.getElementById('f-end-display').textContent='—'; document.getElementById('f-end').value=''; return; }
+  const d=new Date(startVal+'T00:00:00');
+  d.setMonth(d.getMonth()+months);
+  const iso=d.toISOString().split('T')[0];
+  document.getElementById('f-end').value=iso;
+  document.getElementById('f-end-display').textContent=iso;
+}
+
+function openAddModal() { openAddModalForType('electric'); }
+function openAddModalForType(type) {
+  editingId=null; newFiles=[];
+  document.getElementById('modal-title').textContent='Add Supplier';
+  document.getElementById('save-btn').textContent='Save Supplier';
+  ['f-name','f-rate','f-account','f-notes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('f-type').value=type;
+  document.getElementById('f-rate-unit').onchange=onRateUnitChange;
+  onTypeChange();
+  document.getElementById('f-start').value=new Date().toISOString().split('T')[0];
+  document.getElementById('f-term-slider').value=12;
+  document.getElementById('f-term-months').value=12;
+  recalcEnd();
+  document.getElementById('new-file-list').innerHTML='';
+  document.getElementById('existing-docs').innerHTML='';
+  document.getElementById('supplier-modal').classList.add('open');
+}
+
+async function openEditModal(id) {
+  editingId=id; newFiles=[];
+  const s=await api('/api/suppliers/'+id);
+  document.getElementById('modal-title').textContent='Edit Supplier';
+  document.getElementById('save-btn').textContent='Update Supplier';
+  document.getElementById('f-type').value=s.utility_type;
+  document.getElementById('f-rate-unit').onchange=onRateUnitChange;
+  const sel=document.getElementById('f-rate-unit');
+  const opts=RATE_OPTIONS[s.utility_type];
+  sel.innerHTML=opts.map(o=>`<option value="${o.value}">${o.label}</option>`).join('');
+  sel.value=s.rate_unit;
+  updateRateFieldForUnit(opts.find(o=>o.value===s.rate_unit)||opts[0]);
+  document.getElementById('f-name').value=s.supplier_name;
+  document.getElementById('f-rate').value=s.rate;
+  document.getElementById('f-account').value=s.account_number||'';
+  document.getElementById('f-start').value=s.term_start;
+  document.getElementById('f-notes').value=s.notes||'';
+  const months=Math.max(1,Math.min(60,Math.round((new Date(s.term_end+'T00:00:00')-new Date(s.term_start+'T00:00:00'))/(1000*60*60*24*30.44))||12));
+  document.getElementById('f-term-slider').value=months;
+  document.getElementById('f-term-months').value=months;
+  document.getElementById('f-end').value=s.term_end;
+  document.getElementById('f-end-display').textContent=s.term_end;
+  document.getElementById('new-file-list').innerHTML='';
+  const docs=await api('/api/suppliers/'+id+'/documents');
+  const el=document.getElementById('existing-docs');
+  el.innerHTML=docs.length?`<div style="font-size:12px;color:var(--muted);margin-bottom:4px;">Existing files:</div>`:'';
+  docs.forEach(d=>{
+    el.innerHTML+=`<div class="file-item"><div class="file-item-name">📄 ${d.original_filename}</div><div style="display:flex;gap:6px;"><a href="/api/documents/${d.id}/download" class="btn btn-ghost btn-sm">↓</a><button class="btn btn-danger btn-sm" onclick="deleteDoc('${d.id}',this)">✕</button></div></div>`;
+  });
+  document.getElementById('supplier-modal').classList.add('open');
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+async function saveSupplier() {
+  if (!currentAddressId) return;
+  const form=new FormData();
+  form.append('utility_type',document.getElementById('f-type').value);
+  form.append('supplier_name',document.getElementById('f-name').value);
+  form.append('rate',document.getElementById('f-rate').value);
+  form.append('rate_unit',document.getElementById('f-rate-unit').value);
+  form.append('term_start',document.getElementById('f-start').value);
+  form.append('term_end',document.getElementById('f-end').value);
+  form.append('account_number',document.getElementById('f-account').value);
+  form.append('notes',document.getElementById('f-notes').value);
+  newFiles.forEach(f=>form.append('files',f));
+  if (!form.get('supplier_name')||!form.get('rate')||!form.get('term_end')) { showToast('Supplier Name, Rate, and End Date are required.','error'); return; }
+  const url=editingId?`/api/suppliers/${editingId}`:`/api/addresses/${currentAddressId}/suppliers`;
+  const r=await fetch(url,{method:editingId?'PUT':'POST',body:form});
+  if (r.ok) {
+    showToast(editingId?'Supplier updated!':'Supplier added!');
+    closeModal('supplier-modal');
+    currentPage==='suppliers'?loadSuppliers():loadDashboard();
+  } else showToast('Error saving supplier.','error');
+}
+
+async function deleteSupplier(id,name) {
+  if (!confirm(`Delete "${name}"? This will also remove all associated documents.`)) return;
+  const r=await fetch('/api/suppliers/'+id,{method:'DELETE'});
+  if (r.ok) { showToast('Supplier deleted.'); loadSuppliers(); }
+}
+
+async function deleteDoc(id,btn) {
+  const r=await fetch('/api/documents/'+id,{method:'DELETE'});
+  if (r.ok) { btn.closest('.file-item').remove(); showToast('Document deleted.'); }
+}
+
+function handleDragOver(e) { e.preventDefault(); document.getElementById('drop-zone').classList.add('drag-over'); }
+function handleDragLeave()  { document.getElementById('drop-zone').classList.remove('drag-over'); }
+function handleDrop(e)      { e.preventDefault(); document.getElementById('drop-zone').classList.remove('drag-over'); addFiles([...e.dataTransfer.files]); }
+function handleFileSelect(e){ addFiles([...e.target.files]); }
+function addFiles(files) {
+  newFiles.push(...files);
+  const el=document.getElementById('new-file-list');
+  files.forEach(f=>{el.innerHTML+=`<div class="file-item"><div class="file-item-name">📎 ${f.name} <span style="color:var(--muted);font-size:11px;">(${(f.size/1024).toFixed(1)} KB)</span></div><span style="color:var(--success);font-size:12px;">New</span></div>`;});
+}
+
+// ── Address modal ─────────────────────────────────────────────────────────────
+function openAddressModal(id) {
+  editingAddressId = id || null;
+  document.getElementById('address-modal-title').textContent = id ? 'Edit Address' : 'Add Address';
+  document.getElementById('address-save-btn').textContent = id ? 'Update Address' : 'Save Address';
+  if (id) {
+    const a = addresses.find(x=>x.id===id);
+    document.getElementById('a-name').value     = a.name     || '';
+    document.getElementById('a-street').value   = a.street   || '';
+    document.getElementById('a-city').value     = a.city     || '';
+    document.getElementById('a-state').value    = a.state    || '';
+    document.getElementById('a-zip').value      = a.zip      || '';
+    document.getElementById('a-cc-email').value = a.cc_email || '';
+  } else {
+    ['a-name','a-street','a-city','a-state','a-zip','a-cc-email'].forEach(id=>document.getElementById(id).value='');
+  }
+  document.getElementById('address-modal').classList.add('open');
+}
+
+async function saveAddress() {
+  const data = {
+    name:     document.getElementById('a-name').value.trim(),
+    street:   document.getElementById('a-street').value.trim(),
+    city:     document.getElementById('a-city').value.trim(),
+    state:    document.getElementById('a-state').value.trim(),
+    zip:      document.getElementById('a-zip').value.trim(),
+    cc_email: document.getElementById('a-cc-email').value.trim(),
+  };
+  if (!data.name) { showToast('A name or label is required.','error'); return; }
+  const url    = editingAddressId ? `/api/addresses/${editingAddressId}` : '/api/addresses';
+  const method = editingAddressId ? 'PUT' : 'POST';
+  const r = await fetch(url, { method, headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
+  if (!r.ok) { showToast('Error saving address.','error'); return; }
+  showToast(editingAddressId ? 'Address updated!' : 'Address added!');
+  closeModal('address-modal');
+
+  // Refresh addresses list
+  addresses = await api('/api/addresses');
+  renderAddressDropdown();
+
+  // If this was the first address, select it and enable navigation
+  if (!currentAddressId || !addresses.find(a=>a.id===currentAddressId)) {
+    currentAddressId = editingAddressId || (await r.json()).id || addresses[0].id;
+  }
+  document.getElementById('address-select').value = currentAddressId;
+  ['nav-dashboard','nav-suppliers'].forEach(id => document.getElementById(id).style.opacity = '');
+
+  renderAddressList();
+}
+
+async function deleteAddress(id) {
+  const a = addresses.find(x=>x.id===id);
+  if (!confirm(`Delete "${a.name}"? This will permanently remove all suppliers and documents for this address.`)) return;
+  const r = await fetch('/api/addresses/'+id, {method:'DELETE'});
+  if (!r.ok) {
+    const err = await r.json();
+    showToast(err.detail || 'Error deleting address.','error');
+    return;
+  }
+  showToast('Address deleted.');
+  addresses = await api('/api/addresses');
+  renderAddressDropdown();
+  if (currentAddressId === id) {
+    currentAddressId = addresses.length ? addresses[0].id : null;
+    if (currentAddressId) {
+      document.getElementById('address-select').value = currentAddressId;
+      showPage('dashboard');
+    } else {
+      showNoAddressState();
+    }
+  }
+  renderAddressList();
+}
+
+function renderAddressList() {
+  const el = document.getElementById('address-list');
+  if (!addresses.length) {
+    el.innerHTML = `<div style="color:var(--muted);font-size:14px;padding:10px 0;">No addresses yet. Add one above.</div>`;
+    return;
+  }
+  el.innerHTML = addresses.map(a => {
+    const parts = [a.street, a.city, a.state, a.zip].filter(Boolean).join(', ');
+    return `<div class="address-card">
+      <div class="address-card-info">
+        <div class="address-card-name">${a.name}</div>
+        ${parts ? `<div class="address-card-detail">${parts}</div>` : ''}
+        ${a.cc_email ? `<div class="address-card-detail" style="color:var(--accent);font-size:12px;">CC: ${a.cc_email}</div>` : ''}
+      </div>
+      <div class="address-card-actions">
+        <button class="btn btn-ghost btn-sm" onclick="openAddressModal('${a.id}')">✏️ Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteAddress('${a.id}')">🗑️ Delete</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Settings ──────────────────────────────────────────────────────────────────
+async function loadSettings() {
+  renderAddressList();
+  const s = await api('/api/settings');
+  document.getElementById('s-smtp-host').value   = s.smtp_host  || '';
+  document.getElementById('s-smtp-port').value   = s.smtp_port  || '587';
+  document.getElementById('s-smtp-user').value   = s.smtp_user  || '';
+  document.getElementById('s-smtp-pass').value   = '';
+  document.getElementById('s-smtp-from').value   = s.smtp_from  || '';
+  document.getElementById('s-alert-email').value = s.alert_email || '';
+  document.getElementById('s-smtp-tls').checked  = s.smtp_tls !== 'false';
+  document.getElementById('s-compare-url').value = s.compare_url || 'https://www.energychoice.ohio.gov/ApplestoApples.aspx';
+  try { alertDays=JSON.parse(s.alert_days||'[30,60,90]'); } catch { alertDays=[30,60,90]; }
+  renderAlertDayTags();
+}
+
+function renderAlertDayTags() {
+  const c=document.getElementById('alert-days-container'),inp=document.getElementById('alert-days-input');
+  c.querySelectorAll('.tag').forEach(t=>t.remove());
+  [...alertDays].sort((a,b)=>a-b).forEach(d=>{
+    const tag=document.createElement('span'); tag.className='tag';
+    tag.innerHTML=`${d} days <span class="tag-remove" onclick="removeAlertDay(${d})">✕</span>`;
+    c.insertBefore(tag,inp);
+  });
+}
+function removeAlertDay(d) { alertDays=alertDays.filter(x=>x!==d); renderAlertDayTags(); }
+
+document.addEventListener('DOMContentLoaded',()=>{
+  const inp=document.getElementById('alert-days-input');
+  if (inp) inp.addEventListener('keydown',e=>{
+    if (e.key==='Enter'||e.key===',') {
+      e.preventDefault();
+      const v=parseInt(inp.value);
+      if (v>0&&!alertDays.includes(v)) { alertDays.push(v); renderAlertDayTags(); }
+      inp.value='';
+    }
+  });
+});
+
+async function saveSettings() {
+  const pass=document.getElementById('s-smtp-pass').value;
+  const payload={
+    smtp_host:   document.getElementById('s-smtp-host').value,
+    smtp_port:   document.getElementById('s-smtp-port').value,
+    smtp_user:   document.getElementById('s-smtp-user').value,
+    smtp_from:   document.getElementById('s-smtp-from').value,
+    alert_email: document.getElementById('s-alert-email').value,
+    smtp_tls:    document.getElementById('s-smtp-tls').checked?'true':'false',
+    alert_days:  JSON.stringify(alertDays),
+    compare_url: document.getElementById('s-compare-url').value,
+  };
+  if (pass) payload.smtp_password=btoa(pass);
+  const r=await fetch('/api/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  if (r.ok) { showToast('Settings saved!'); loadDashboard(); }
+  else showToast('Error saving settings.','error');
+}
+
+async function testEmail() {
+  showToast('Sending test email…');
+  const r=await fetch('/api/settings/test-email',{method:'POST'});
+  r.ok?showToast('Test email sent! Check your inbox.'):showToast('Failed to send. Check SMTP settings.','error');
+}
+
+async function runAlertCheck() {
+  const r=await fetch('/api/check-alerts',{method:'POST'});
+  r.ok?showToast('Alert check triggered!'):showToast('Error triggering check.','error');
+}
+
+async function api(url) {
+  const r=await fetch(url);
+  if (!r.ok) throw new Error('API error: '+r.status);
+  return r.json();
+}
+
+init();
+</script>
+</body>
+</html>
