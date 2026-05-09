@@ -1,12 +1,18 @@
 #!/usr/bin/env bash
 # build-multiarch.sh
-# Builds and pushes a multi-architecture image to Docker Hub.
-# Usage: ./build-multiarch.sh yourname/utility-choice-tracker 1.1.0
+# Builds and pushes a multi-architecture image to GitHub Container Registry (GHCR).
+# Usage: ./build-multiarch.sh yourusername 1.1.0
+#
+# Prerequisites:
+#   1. Create a GitHub PAT with write:packages scope at:
+#      https://github.com/settings/tokens
+#   2. Log in: echo YOUR_PAT | docker login ghcr.io -u yourusername --password-stdin
 
 set -e
 
-IMAGE=${1:-"yourname/utility-choice-tracker"}
+GITHUB_USER=${1:-"yourusername"}
 TAG=${2:-"latest"}
+IMAGE="ghcr.io/${GITHUB_USER}/utility-choice-tracker"
 
 echo "Building multi-arch image: ${IMAGE}:${TAG}"
 echo "Platforms:"
@@ -32,17 +38,12 @@ docker buildx build \
   .
 
 echo ""
-echo "✅ Done! Image pushed:"
+echo "✅ Done! Image pushed to GHCR:"
 echo "   ${IMAGE}:${TAG}"
 echo "   ${IMAGE}:latest"
 echo ""
-echo "Covers x86 servers and Raspberry Pi 4/5. Docker pulls the right"
-echo "architecture automatically based on the host machine."
+echo "Pull it with:"
+echo "  docker pull ${IMAGE}:latest"
 echo ""
-echo "Run it with:"
-echo "  docker run -d --name utility-choice-tracker --restart unless-stopped \\"
-echo "    -p 8000:8000 \\"
-echo "    -v /opt/utility-tracker/data:/data \\"
-echo "    -v /opt/utility-tracker/uploads:/uploads \\"
-echo "    -e TZ=America/New_York \\"
-echo "    ${IMAGE}:latest"
+echo "Or use in docker-compose.yml:"
+echo "  image: ${IMAGE}:latest"

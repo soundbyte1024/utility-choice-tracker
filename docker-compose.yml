@@ -1,17 +1,16 @@
 services:
   utility-tracker:
-    build: .
-    container_name: utility-choice-tracker-dev
+    # Option A: pull from GHCR (recommended for running without source code)
+    image: ghcr.io/yourusername/utility-choice-tracker:latest
+    # Option B: build locally from source (comment out image: above and uncomment below)
+    # build: .
+    container_name: utility-choice-tracker
     restart: unless-stopped
     ports:
       - "8000:8000"
     volumes:
-      - utility-data:/data
-      - utility-uploads:/uploads
+      - /opt/utility-tracker/data:/data
+      - /opt/utility-tracker/uploads:/uploads
     environment:
-      # Optional: override cron time by modifying entrypoint.sh or adding env vars
       - TZ=America/New_York
 
-volumes:
-  utility-data:
-  utility-uploads:
