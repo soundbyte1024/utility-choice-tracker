@@ -1,0 +1,17 @@
+services:
+  utility-tracker:
+    build: .
+    container_name: utility-choice-tracker-dev
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - utility-data:/data
+      - utility-uploads:/uploads
+    environment:
+      # Optional: override cron time by modifying entrypoint.sh or adding env vars
+      - TZ=America/New_York
+
+volumes:
+  utility-data:
+  utility-uploads:
